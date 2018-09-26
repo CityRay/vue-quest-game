@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>練習2</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
   <style>
     #app {
       font-size: 1.25em;
@@ -18,8 +18,19 @@
     }
     .quest{
       margin-bottom: 1em;
-      padding-bottom: 1em;
-      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.01em;
+      /* border-bottom: 1px solid #ccc; */
+    }
+    .new-quest {
+      margin-bottom: 1em;
+      padding-bottom: 0.01em;
+    }
+    .new-quest input{
+      width: 300px;
+      height: 20px;
+    }
+    .new-quest button{
+      margin-top: 1em;
     }
   </style>
 </head>
@@ -31,25 +42,68 @@
 
     <hr>
 
-    <div class="quest" v-for="(q, index) in questions">
-      <h3>第{{ index + 1 }}題: {{ q.quest }}</h3>
-      <label v-for="(answer, index) in q.options">
-        <input type="radio" :value="answer.value" v-model="q.selected">
-        {{ index + 1 }}. {{ answer.ans }}
-      </label>
-
+    <div class="quest" v-if="status === 0">
+      <button @click="start">開始</button>
     </div>
 
-    <button @click="settlement">看結果</button>
-    <button @click="reset">重置</button>
+    <div class="quest" v-if="status === 1" v-for="(q, idx) in questions">
+      <template v-if="idx === qidx">
+          <h3>第{{ idx + 1 }}題: {{ q.quest }}</h3>
+          <label v-for="(answer, index) in q.options">
+            <input type="radio" :value="answer.value" v-model="q.selected">
+            {{ index + 1 }}. {{ answer.ans }}
+          </label>
+      </template>
+    </div>
+
+    <div class="new-quest" v-if="status === 2">
+      <label>
+        題目： <input type="text" v-model="newQuestion.quest">
+      </label>
+      <label v-for="q in newQuestion.options">
+        答案： <input type="text" v-model="q.ans">
+        分數： <input type="number" v-model="q.value">
+      </label>
+      <button @click.prevent="addCol">增加欄位</button>
+
+      <div>
+          <button @click.prevent="onAdd">完成新增</button>
+      </div>
+    </div>
+
+    <hr>
+
+    <button @click="onPre" :disabled="qidx === 0">上一題</button>
+    <button
+      @click="onNext"
+      :disabled="qidx === questions.length - 1 || status !== 1"
+    >
+      下一題
+    </button>
+    <button
+      @click="settlement"
+      :disabled="status !== 1 || (qidx + 1) !== questions.length"
+    >
+      看結果
+    </button>
+    <button @click="reset" :disabled="status !== 1">重置</button>
+    <button @click="addMode">新增問答</button>
   </div>
 
 
   <script>
-  <script>
   var vm = new Vue({
     el: '#app',
     data: {
+      status: 0, // 0: ready, 1: start, 2: add question
+      qidx: 0,
+      newQuestion: {
+        quest: '',
+        options: [{
+          ans: '',
+          value: 1
+        }]
+      },
       questions: [
         {
           quest: '如果你是童話故事中，想吃掉三隻小豬的大野狼，你認為使用哪一種方法可以容易吃掉他們？',
@@ -92,13 +146,68 @@
       }
     },
     methods: {
+      addMode() {
+        this.reset();
+
+        this.status = 2;
+        this.newQuestion = {
+          quest: '',
+          options: [{
+            ans: '',
+            value: 1
+          }]
+        }
+      },
+      addCol() {
+        this.newQuestion.options.push({
+          ans: '',
+          value: 1
+        });
+      },
       settlement: function(){
-        alert('總分: ' + this.total);
+        var check = true;
+        this.questions.some((d, idx, arr) => {
+          console.log(d.selected);
+          if (!d.selected) {
+            check = false;
+            return true;
+          }
+        });
+
+        if (check) {
+          alert('總分: ' + this.total);
+        } else {
+          alert('請完成作答!!!');
+        }
+      },
+      start() {
+        this.status = 1;
       },
       reset: function(){
+        if (this.status === 0) return;
+
+        this.qidx = 0;
+        this.status = 0;
         this.questions.forEach(function(v){
           v.selected = null;
         });
+      },
+      onPre() {
+        if (this.qidx > 0) {
+          this.qidx -= 1;
+        }
+      },
+      onNext() {
+        if (!this.questions[this.qidx].selected) {
+          alert('請作答!!!');
+          return;
+        }
+        if ((this.qidx + 1) < this.questions.length) {
+          this.qidx += 1;
+        }
+      },
+      onAdd() {
+        console.log(this.newQuestion);
       }
     },
   });
