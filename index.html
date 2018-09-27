@@ -208,6 +208,17 @@
       },
       onAdd() {
         console.log(this.newQuestion);
+        if (this.newQuestion.quest && this.newQuestion.options[0].ans) {
+          this.questions.push({
+            quest: this.newQuestion.quest,
+            options: this.newQuestion.options.filter((d) => !!d.ans),
+            selected: null
+          });
+
+          this.reset();
+        } else {
+          alert('請填內容!!!')
+        }
       }
     },
   });
